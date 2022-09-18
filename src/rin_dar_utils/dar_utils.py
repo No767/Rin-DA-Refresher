@@ -8,10 +8,11 @@ from sqlalchemy.orm import sessionmaker
 from . import models
 from .models import Base
 
+
 class RinDARUtils:
     def __init__(self):
         self.self = self
-        
+
     async def initAllDARTables(self, uri: str) -> None:
         """Creates all of the tables
 
@@ -24,10 +25,12 @@ class RinDARUtils:
         )
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    
-    async def addToDARData(self, uuid: str, access_token: str, refresh_token: str, uri: str) -> None:
+
+    async def addToDARData(
+        self, uuid: str, access_token: str, refresh_token: str, uri: str
+    ) -> None:
         """Adds an entry into the DAR DB
 
         Args:
@@ -40,12 +43,14 @@ class RinDARUtils:
         asyncSession = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
         async with asyncSession() as session:
             async with session.begin():
-                insertItem = models.DARData(uuid=uuid, access_token=access_token, refresh_token=refresh_token)
+                insertItem = models.DARData(
+                    uuid=uuid, access_token=access_token, refresh_token=refresh_token
+                )
                 session.add_all([insertItem])
                 await session.commit()
-                
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    
+
     async def getAllDARData(self, uri: str) -> list:
         """Returns all of the data stored in the DAR DB
 
@@ -62,9 +67,9 @@ class RinDARUtils:
                 selectItem = select(models.DARData)
                 res = await session.execute(selectItem)
                 return [row for row in res.scalars()]
-            
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    
+
     async def getDARDataViaUUID(self, uuid: str, uri: str) -> list:
         """Gets that one row via the UUID instead
 
@@ -82,9 +87,9 @@ class RinDARUtils:
                 selectItem = select(models.DARData).where(models.DARData.uuid == uuid)
                 res = await session.execute(selectItem)
                 return [row for row in res.scalars()]
-            
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    
+
     async def getRefreshTokenViaUUID(self, uuid: str, uri: str) -> list:
         """Gets all of the refresh tokens from the db
 
@@ -99,14 +104,17 @@ class RinDARUtils:
         asyncSession = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
         async with asyncSession() as session:
             async with session.begin():
-                selItem = select(models.DARData.refresh_token).where(models.DARData.uuid == uuid)
+                selItem = select(models.DARData.refresh_token).where(
+                    models.DARData.uuid == uuid
+                )
                 res = await session.execute(selItem)
                 return [row for row in res.scalars()]
-            
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    
-    
-    async def updateDARData(self, uuid: str, access_token: str, refresh_token: str, uri: str) -> None:
+
+    async def updateDARData(
+        self, uuid: str, access_token: str, refresh_token: str, uri: str
+    ) -> None:
         """Updates the info found in the DAR DB
 
         Args:
@@ -119,8 +127,14 @@ class RinDARUtils:
         asyncSession = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
         async with asyncSession() as session:
             async with session.begin():
-                updateItem = update(models.DARData, values={models.DARData.access_token: access_token, models.DARData.refresh_token: refresh_token}).where(models.DARData.uuid == uuid)
+                updateItem = update(
+                    models.DARData,
+                    values={
+                        models.DARData.access_token: access_token,
+                        models.DARData.refresh_token: refresh_token,
+                    },
+                ).where(models.DARData.uuid == uuid)
                 await session.execute(updateItem)
                 await session.commit()
-                
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

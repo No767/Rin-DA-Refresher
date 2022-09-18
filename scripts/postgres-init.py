@@ -2,7 +2,6 @@ import asyncio
 import os
 import sys
 from pathlib import Path
-import uuid
 
 import uvloop
 from dotenv import load_dotenv
@@ -25,8 +24,11 @@ DAR_CONNECTION_URI = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@
 
 darUtils = RinDARUtils()
 
+
 async def main():
     await darUtils.initAllDARTables(uri=DAR_CONNECTION_URI)
+
+
 if __name__ == "__main__":
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(main())

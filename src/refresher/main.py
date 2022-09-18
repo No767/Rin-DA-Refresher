@@ -1,15 +1,14 @@
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
-import logging
 
 import aiohttp
-import simdjson
 import orjson
-from rin_exceptions import NoItemsError
-
+import simdjson
 from dotenv import load_dotenv
+from rin_exceptions import NoItemsError
 
 path = Path(__file__).parents[1]
 sys.path.append(str(path))
@@ -36,6 +35,7 @@ logging.basicConfig(
 
 darUtils = RinDARUtils()
 
+
 async def main():
     logging.info("Started Rin-DAR")
     while True:
@@ -45,16 +45,24 @@ async def main():
             if len(checkForItem) == 0:
                 raise NoItemsError
             else:
-                logging.info(f"[BEFORE REQUEST] Access Token from DB: {[dict(item)['access_token'] for item in checkForItem][0]}")
-                logging.info(f"[BEFORE REQUEST] Refresh Token from DB: {[dict(item)['refresh_token'] for item in checkForItem][0]}")
-                firstUUID = [dict(item)['uuid'] for item in checkForItem][0]
-                refreshTokenList = await darUtils.getRefreshTokenViaUUID(uuid=firstUUID, uri=DAR_CONNECTION_URI)
-                async with aiohttp.ClientSession(json_serialize=orjson.dumps) as session:
+                logging.info(
+                    f"[BEFORE REQUEST] Access Token from DB: {[dict(item)['access_token'] for item in checkForItem][0]}"
+                )
+                logging.info(
+                    f"[BEFORE REQUEST] Refresh Token from DB: {[dict(item)['refresh_token'] for item in checkForItem][0]}"
+                )
+                firstUUID = [dict(item)["uuid"] for item in checkForItem][0]
+                refreshTokenList = await darUtils.getRefreshTokenViaUUID(
+                    uuid=firstUUID, uri=DAR_CONNECTION_URI
+                )
+                async with aiohttp.ClientSession(
+                    json_serialize=orjson.dumps
+                ) as session:
                     params = {
-                "client_id": f"{DA_CLIENT_ID}",
-                "client_secret": f"{DA_CLIENT_SECRET}",
-                "grant_type": "refresh_token",
-                "refresh_token": f"{refreshTokenList[0]}",
+                        "client_id": f"{DA_CLIENT_ID}",
+                        "client_secret": f"{DA_CLIENT_SECRET}",
+                        "grant_type": "refresh_token",
+                        "refresh_token": f"{refreshTokenList[0]}",
                     }
                     async with session.get(
                         "https://www.deviantart.com/oauth2/token", params=params
@@ -63,14 +71,26 @@ async def main():
                         dataMain = jsonParser.parse(data, recursive=True)
                         if r.status == 400:
                             # Add a system to re-auth later
-                            logging.warning(f"Restarting OAuth2 auth process due to HTTP {r.status} status code")
+                            logging.warning(
+                                f"Restarting OAuth2 auth process due to HTTP {r.status} status code"
+                            )
                         else:
-                            await darUtils.updateDARData(uuid=firstUUID, access_token=dataMain["access_token"], refresh_token=dataMain["refresh_token"], uri=DAR_CONNECTION_URI)
-                            logging.info(f"New Data Inputted - Access Token: {dataMain['access_token']} |--| Refresh Token: {dataMain['refresh_token']}")
+                            await darUtils.updateDARData(
+                                uuid=firstUUID,
+                                access_token=dataMain["access_token"],
+                                refresh_token=dataMain["refresh_token"],
+                                uri=DAR_CONNECTION_URI,
+                            )
+                            logging.info(
+                                f"New Data Inputted - Access Token: {dataMain['access_token']} |--| Refresh Token: {dataMain['refresh_token']}"
+                            )
         except NoItemsError:
-            logging.warning("There seems to be no tokens in the DB. This could be that the request was invalid, or this is the first time running it. Please check the DB and continuing to check for more.")
+            logging.warning(
+                "There seems to be no tokens in the DB. This could be that the request was invalid, or this is the first time running it. Please check the DB and continuing to check for more."
+            )
             continue
-    
+
+
 if __name__ == "__main__":
     task = asyncio.create_task(asyncio.run(main()), name="Rin-DAR")
     backgroundTasks = set()
